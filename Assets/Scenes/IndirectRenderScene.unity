@@ -411,6 +411,7 @@ MonoBehaviour:
   SpawnRadius: 500
   Material: {fileID: 2100000, guid: 3e6a893b6f18744c887489e5bf3564d1, type: 2}
   Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  ComputeShader: {fileID: 7200000, guid: 5a85d3b0fff724a358c6501e919296dd, type: 3}
 --- !u!4 &582127471
 Transform:
   m_ObjectHideFlags: 0
