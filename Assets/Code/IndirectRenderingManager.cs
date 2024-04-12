@@ -31,7 +31,9 @@ public unsafe class IndirectRenderingManager : MonoBehaviour
 		args[1] = (uint)ObjectCount;
 		args[2] = Mesh.GetIndexStart(0);
 		args[3] = Mesh.GetBaseVertex(0);
-		_argsBuffer = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
+		const int count = 1;
+		var stride = args.Length * sizeof(uint);
+		_argsBuffer = new ComputeBuffer(count, stride, ComputeBufferType.IndirectArguments);
 		_argsBuffer.SetData(args);
 
 		var properties = new PerInstanceData[ObjectCount];
@@ -41,8 +43,8 @@ public unsafe class IndirectRenderingManager : MonoBehaviour
 			var position = _random.NextFloat3(-SpawnRadius, SpawnRadius);
 			var rotation = _random.NextQuaternionRotation();
 			var scale = new float3(1, 1, 1);
-			props.LocalToWorld = Matrix4x4.TRS(position, rotation, scale);
-			props.Color = new Color(_random.NextFloat(), _random.NextFloat(), _random.NextFloat(), 1.0f);
+			props.LocalToWorld = float4x4.TRS(position, rotation, scale);
+			props.Color = new float4(_random.NextFloat3(), 1.0f);
 			properties[i] = props;
 		}
 
