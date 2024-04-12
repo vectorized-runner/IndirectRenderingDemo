@@ -10,6 +10,7 @@ public unsafe class IndirectRenderingManager : MonoBehaviour
 
 	public Material Material;
 	public Mesh Mesh;
+	public ComputeShader ComputeShader;
 
 	private ComputeBuffer _perInstanceDataBuffer;
 	private ComputeBuffer _argsBuffer;
@@ -59,6 +60,9 @@ public unsafe class IndirectRenderingManager : MonoBehaviour
 		_perInstanceDataBuffer = new ComputeBuffer(ObjectCount, sizeof(PerInstanceData));
 		_perInstanceDataBuffer.SetData(properties);
 		Material.SetBuffer(_perInstanceDataId, _perInstanceDataBuffer);
+		
+		var kernel = ComputeShader.FindKernel("CSMain");
+		ComputeShader.SetBuffer(kernel, _perInstanceDataId, _perInstanceDataBuffer);
 	}
 
 	private void Update()
@@ -68,6 +72,10 @@ public unsafe class IndirectRenderingManager : MonoBehaviour
 			Refresh();
 			_lastObjectCount = ObjectCount;
 		}
+
+		var kernel = ComputeShader.FindKernel("CSMain");
+		// TODO: What are those thread groups?
+		ComputeShader.Dispatch(kernel, ObjectCount / 64, 1, 1);
 
 		Graphics.DrawMeshInstancedIndirect(Mesh, 0, Material, _renderBounds, _argsBuffer);
 	}
