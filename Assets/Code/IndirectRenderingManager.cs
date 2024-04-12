@@ -6,6 +6,8 @@ public unsafe class IndirectRenderingManager : MonoBehaviour
 	public int ObjectCount = 100_000;
 	public float SpawnRadius = 10_000.0f;
 
+	private int _lastObjectCount;
+
 	public Material Material;
 	public Mesh Mesh;
 
@@ -18,14 +20,20 @@ public unsafe class IndirectRenderingManager : MonoBehaviour
 
 	private void Start()
 	{
-		_renderBounds = new Bounds(float3.zero, new float3(SpawnRadius));
-		_random = new Unity.Mathematics.Random(1);
-
-		InitBuffers();
+		Refresh();
 	}
 
-	private void InitBuffers()
+	private void Refresh()
 	{
+		if (_argsBuffer != null && _argsBuffer.IsValid())
+			_argsBuffer.Dispose();
+		if (_perInstanceDataBuffer != null && _perInstanceDataBuffer.IsValid())
+			_perInstanceDataBuffer.Dispose();
+
+		// Don't cull
+		_renderBounds = new Bounds(float3.zero, new float3(1_000_000));
+		_random = new Unity.Mathematics.Random(1);
+
 		var args = new uint[] { 0, 0, 0, 0, 0 };
 		args[0] = Mesh.GetIndexCount(0);
 		args[1] = (uint)ObjectCount;
@@ -55,12 +63,12 @@ public unsafe class IndirectRenderingManager : MonoBehaviour
 
 	private void Update()
 	{
-		Graphics.DrawMeshInstancedIndirect(Mesh, 0, Material, _renderBounds, _argsBuffer);
-	}
+		if (ObjectCount != _lastObjectCount)
+		{
+			Refresh();
+			_lastObjectCount = ObjectCount;
+		}
 
-	private void OnDestroy()
-	{
-		_perInstanceDataBuffer?.Release();
-		_argsBuffer?.Release();
+		Graphics.DrawMeshInstancedIndirect(Mesh, 0, Material, _renderBounds, _argsBuffer);
 	}
 }
