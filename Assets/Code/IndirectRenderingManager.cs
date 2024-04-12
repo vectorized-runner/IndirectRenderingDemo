@@ -1,49 +1,36 @@
-using System;
 using Unity.Mathematics;
 using UnityEngine;
-
-// Should match the Shader layout exactly
-public struct PerInstanceData
-{
-	public Matrix4x4 LocalToWorld;
-	public Vector4 Color;
-}
 
 public unsafe class IndirectRenderingManager : MonoBehaviour
 {
 	public int ObjectCount = 100_000;
 	public float SpawnRadius = 10_000.0f;
 
-	public Material material;
+	public Material Material;
+	public Mesh Mesh;
 
 	private ComputeBuffer _perInstanceDataBuffer;
 	private ComputeBuffer _argsBuffer;
 
-	private Mesh mesh;
 	private Bounds _renderBounds;
 	private Unity.Mathematics.Random _random;
 	private static readonly int _perInstanceDataId = Shader.PropertyToID("_PerInstanceData");
 
 	private void Start()
 	{
-		// TODO: Why?
-		Mesh mesh = CreateQuad();
-		this.mesh = mesh;
-
 		_renderBounds = new Bounds(float3.zero, new float3(SpawnRadius));
-
-		InitializeBuffers();
-
 		_random = new Unity.Mathematics.Random(1);
+
+		InitBuffers();
 	}
 
-	private void InitializeBuffers()
+	private void InitBuffers()
 	{
 		var args = new uint[] { 0, 0, 0, 0, 0 };
-		args[0] = mesh.GetIndexCount(0);
+		args[0] = Mesh.GetIndexCount(0);
 		args[1] = (uint)ObjectCount;
-		args[2] = mesh.GetIndexStart(0);
-		args[3] = mesh.GetBaseVertex(0);
+		args[2] = Mesh.GetIndexStart(0);
+		args[3] = Mesh.GetBaseVertex(0);
 		_argsBuffer = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
 		_argsBuffer.SetData(args);
 
@@ -61,22 +48,15 @@ public unsafe class IndirectRenderingManager : MonoBehaviour
 
 		_perInstanceDataBuffer = new ComputeBuffer(ObjectCount, sizeof(PerInstanceData));
 		_perInstanceDataBuffer.SetData(properties);
-		material.SetBuffer(_perInstanceDataId, _perInstanceDataBuffer);
+		Material.SetBuffer(_perInstanceDataId, _perInstanceDataBuffer);
 	}
-
-	private Mesh CreateQuad(float width = 1f, float height = 1f)
-	{
-		// TODO:
-		throw new NotImplementedException();
-	}
-
 
 	private void Update()
 	{
-		Graphics.DrawMeshInstancedIndirect(mesh, 0, material, _renderBounds, _argsBuffer);
+		Graphics.DrawMeshInstancedIndirect(Mesh, 0, Material, _renderBounds, _argsBuffer);
 	}
 
-	private void OnDisable()
+	private void OnDestroy()
 	{
 		_perInstanceDataBuffer?.Release();
 		_argsBuffer?.Release();
